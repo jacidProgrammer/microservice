@@ -1,0 +1,106 @@
+version: '3.7'
+services:
+  config-server:
+    image: config-server:v1
+    ports:
+      - "8888:8888"
+    restart: always
+    networks:
+      - microservices
+  eureka-server:
+    image: eureka-server:v1
+    ports:
+      - "8761:8761"
+    restart: always
+    networks:
+      - microservices
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    restart: always
+    networks:
+      - microservices
+    environment:
+      MYSQL_DATABASE: microservice_products
+      MYSQL_ROOT_PASSWORD: sbk7
+  postgres:
+    image: postgres:11-alpine
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - microservices
+    environment: 
+      POSTGRES_DB: microservice_users
+      POSTGRES_PASSWORD: sbk7 
+  product-service:
+    image: product-service:v1
+    restart: always
+    networks:
+      - microservices
+    depends_on:
+      - config-server
+      - eureka-server
+      - mysql
+  item-service:
+    image: item-service:v1
+    ports:
+      -  "8005:8005"
+    restart: always
+    networks:
+      - microservices
+    depends_on:
+      - config-server
+      - eureka-server
+      - product-service
+  authentication-service:
+    image: authentication-service:v1
+    ports:
+      - "9100:9100"
+    restart: always
+    networks:
+      - microservices
+    depends_on: 
+      - config-server
+      - eureka-server
+      - postgres
+  zuul-server:
+    image: zuul-server:v1
+    ports:
+      -  "8090:8090"
+    restart: always
+    networks:
+      - microservices
+    depends_on:
+      - config-server
+      - eureka-server
+      - product-service
+      - item-service
+      - authentication-service
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    restart: always
+    networks:
+      - microservices
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    restart: always
+    networks:
+      - microservices
+    depends_on: 
+      - rabbitmq
+      - mysql
+    environment: 
+      RABBIT_ADDRESSES: rabbitmq:5672
+#      STORAGE_TYPE: mysql
+#      MYSQL_USER: zipkin
+#      MYSQL_PASS: zipkin
+#      MYSQL_HOST: mysql
+networks:
+  microservices:

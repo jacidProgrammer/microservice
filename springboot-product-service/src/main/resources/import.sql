@@ -1,0 +1,1 @@
+INSERT INTO products (id, name, price, creation_date) VALUES (0, 'PC', 999, CURRENT_TIMESTAMP);
